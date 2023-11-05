@@ -15,7 +15,7 @@ class ISPMonitor:
     def __init__(self):
         logging.basicConfig(filename='debug.log', format='%(asctime)s - %(message)s', level=logging.INFO)
         self.cmd = "./speedtest"
-        self.csvcolumnheaders = ["Timestamp", "Server", "ISP", "Idle Latency", "Download", "Upload", "Packet Loss", "Result URL" ]
+        self.csvcolumnheaders = ["Timestamp", "Server", "ISP", "Idle Latency in ms", "Idle Latency Details", "Download in Mbps", "Download Details", "Upload in Mbps", "Upload Details", "Packet Loss", "Result URL" ]
 
     def log_output(self,fname, data, method):
         logging.info("Writing to text file for speed test results.")
@@ -40,7 +40,7 @@ class ISPMonitor:
         logging.info("Reading the text file for speed test results.")
         #print("Reading speed test results...")
         mylines = []
-        with open ('data/speedtest.txt', 'rt') as myfile:
+        with open ('D:\GitHub\ispmon\data\speedtest.txt', 'rt') as myfile:
             for myline in myfile:
                 myline = myline.strip('\n')
                 myline = myline.strip('\t')
@@ -51,9 +51,10 @@ class ISPMonitor:
 
         return mylines
 
-    def clean_string(self,s):
-        pattern = r',| '
-        return re.sub(pattern, ' ', s)
+    def clean_string(self,p, s):
+        if p == 1:
+            pattern = r',| '
+            return re.sub(pattern, ' ', s)
 
     def resultCleanup(self, rlist):
         logging.info("Cleaning up results.")
@@ -76,27 +77,38 @@ class ISPMonitor:
         ploss = ploss.split("Packet Loss:",1)[1]
         rurl = rurl.split("Result URL:",1)[1]
 
-        server = self.clean_string(server)
+        server = self.clean_string(1, server)
         server = server.strip(" ")
-        isp = self.clean_string(isp)
+        isp = self.clean_string(1, isp)
         isp = isp.strip(" ")
-        latency = self.clean_string(latency)
+        # Split the text out so it's easier to plot
+        latency = self.clean_string(1, latency)
+        ldetails = latency.split("ms", 1)[1]
+        latency = latency.split("ms", 1)[0]
         latency = latency.strip(" ")
-        download = self.clean_string(download)
+        ldetails = ldetails.strip("  ")
+        # Split the text out so it's easier to plot
+        download = self.clean_string(1, download)
+        ddetails = download.split("Mbps", 1)[1]
+        download = download.split("Mbps", 1)[0]
         download = download.strip(" ")
-        dlatency = self.clean_string(dlatency)
+        dlatency = self.clean_string(1, dlatency)
         dlatency = dlatency.strip(" ")
-        download = download + " " + dlatency
-        upload = self.clean_string(upload)
+        dlatency = ddetails + dlatency
+        # Split the text out so it's easier to plot
+        upload = self.clean_string(1, upload)
+        udetails = upload.split("Mbps", 1)[1]
+        upload = upload.split("Mbps", 1)[0]
         upload = upload.strip(" ")
-        ulatency = self.clean_string(ulatency)
+        ulatency = self.clean_string(1, ulatency)
         ulatency = ulatency.strip(" ")
-        upload = upload + " " + ulatency
-        ploss = self.clean_string(ploss)
+        ulatency = udetails + ulatency
+
+        ploss = self.clean_string(1, ploss)
         ploss = ploss.strip(" ")
-        rurl = self.clean_string(rurl)
+        rurl = self.clean_string(1, rurl)
         rurl = rurl.strip(" ")
-        payload = [server,isp, latency, download, upload, ploss, rurl]
+        payload = [server,isp, latency, ldetails, download, dlatency, upload, ulatency, ploss, rurl]
 
         return payload
 
@@ -141,7 +153,7 @@ class ISPMonitor:
 
 
     def main(self):
-        waittime = 30 # Specify how many minutes to wait between speed tests.
+        waittime = 15 # Specify how many minutes to wait between speed tests.
         waittime = int(waittime) * 60
         while True:
             print("Getting speedtest.net results.  This will take a few minutes...")
@@ -157,6 +169,7 @@ class ISPMonitor:
             print(datetime.datetime.now())
             print(f"Waiting {(waittime / 60)} minute(s) before checking again.")
             time.sleep(int(waittime))
+
 
 if __name__ == '__main__':
     logging.info("Start program.")
