@@ -14,8 +14,8 @@ import re
 class ISPMonitor:
     def __init__(self):
         logging.basicConfig(filename='debug.log', format='%(asctime)s - %(message)s', level=logging.INFO)
-        self.cmd = "./speedtest"
-        self.datafile = "data/speedtest.txt"
+        self.cmd = "speedtest.exe"
+        self.datafile = "data//speedtest.txt" 
         self.resultsfile = "data//st_results.csv"
         self.csvcolumnheaders = ["Timestamp", "Server", "ISP", "Idle Latency in ms", "Idle Latency Details", "Download in Mbps", "Download Details", "Upload in Mbps", "Upload Details", "Packet Loss", "Result URL" ]
 
@@ -41,14 +41,19 @@ class ISPMonitor:
         logging.info("Reading the text file for speed test results.")
         #print("Reading speed test results...")
         mylines = []
-        with open (self.datafile, 'rt') as myfile:
-            for myline in myfile:
-                myline = myline.strip('\n')
-                myline = myline.strip('\t')
-                mylines.append(myline.strip())
-        mylines.remove("")
-        mylines.remove('')
-        #print(mylines)
+        try:
+            with open (self.datafile, 'rt') as myfile:    
+                for myline in myfile:
+                    myline = myline.strip('\n')
+                    myline = myline.strip('\t')
+                    mylines.append(myline.strip())
+            mylines.remove("")
+            mylines.remove('')
+            #print(mylines)
+
+        except:
+            print("Failed to write to /data")
+            logging.exception("Exception occurred: Failed to write to /data in readText function.")
 
         return mylines
 
@@ -138,13 +143,15 @@ class ISPMonitor:
             logging.exception("Exception occurred: Failed to write to .csv file in writeCSV function.")
 
     def speedTest(self):
-        logging.info("executing ./speedtest")
+        logging.info("executing speedtest.exe")
+        
         try:
             command = f"{self.cmd}"
             st = os.popen(command)
             st_list = st.read()
             print(st_list)
             self.log_output(st_list, 'w+')
+        
         except Exception as e:
             print(f"Failed to perform speedtest. {e}")
             logging.exception("Exception occurred: Failed to complete speedTest. %s", e)
